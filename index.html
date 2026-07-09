@@ -258,6 +258,138 @@ canvas.chart { width: 100% !important; }
 /* ── フレックスレイアウト ── */
 .flex-row { display: flex; gap: 14px; }
 .flex-col { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── 4カメラグリッド ── */
+.cam4-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.cam4-cell {
+  position: relative;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.cam4-cell video { width: 100%; display: block; }
+.cam4-cell canvas { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+.cam4-label {
+  position: absolute; bottom: 6px; left: 6px;
+  background: rgba(0,0,0,0.65); color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 3px;
+}
+.cam4-count {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(0,0,0,0.65); color: #fff;
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 3px;
+}
+.cam4-live {
+  position: absolute; top: 6px; left: 6px;
+  background: var(--danger); color: #fff;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 6px; border-radius: 3px;
+  animation: blink 1.4s ease-in-out infinite;
+}
+.cam4-warn { background: rgba(212,143,0,0.85) !important; }
+
+/* ── スマホ対応 ── */
+#hamburger {
+  display: none; background: none; border: none;
+  font-size: 22px; cursor: pointer; color: var(--primary);
+  padding: 4px 8px;
+}
+#nav-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 100;
+}
+#bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--primary);
+  height: 56px;
+  flex-direction: row;
+  z-index: 90;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+.bn-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.65); font-size: 9px;
+  cursor: pointer; gap: 2px; padding: 6px 0;
+  border: none; background: none;
+  transition: color 0.15s;
+}
+.bn-item .bn-icon { font-size: 18px; }
+.bn-item.active, .bn-item:hover { color: #fff; }
+.bn-badge {
+  position: absolute; top: 4px;
+  background: var(--danger); color: #fff;
+  font-size: 9px; font-weight: 700;
+  padding: 0 4px; border-radius: 8px;
+  min-width: 14px; text-align: center;
+}
+
+@media (max-width: 767px) {
+  :root { --nav-w: 240px; }
+
+  /* サイドナビをドロワーに */
+  #nav {
+    position: fixed; left: -260px; top: 0; bottom: 0;
+    z-index: 110; transition: left 0.25s;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.25);
+  }
+  #nav.open { left: 0; }
+  #nav-overlay.open { display: block; }
+
+  /* ハンバーガー表示 */
+  #hamburger { display: block; }
+
+  /* 下タブナビ表示 */
+  #bottom-nav { display: flex; }
+
+  /* コンテンツに下余白 */
+  #content { padding: 12px 12px 72px; }
+
+  /* topbar */
+  #topbar { padding: 0 12px; }
+  #topbar .date { display: none; }
+
+  /* KPIグリッド → 2列 */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+  .kpi-value { font-size: 22px; }
+
+  /* 鶏舎グリッド → 1列 */
+  .barn-grid { grid-template-columns: 1fr !important; }
+
+  /* 2カラム → 1カラム */
+  .grid-2 { grid-template-columns: 1fr !important; }
+
+  /* カメラ flex-row → column */
+  #screen-camera .flex-row { flex-direction: column; }
+  #screen-camera .cam-panel { width: 100%; }
+
+  /* 4カメラ → スマホでも2列維持（縦に小さく） */
+  .cam4-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+
+  /* テーブル横スクロール */
+  .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 出荷テーブルは横スクロール */
+  #screen-shipment .tbl { min-width: 560px; }
+
+  /* アラートタイム非表示 */
+  .alert-time { display: none; }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root { --nav-w: 180px; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .barn-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
 </style>
 </head>
 <body>
@@ -304,6 +436,7 @@ canvas.chart { width: 100% !important; }
 <!-- ══════════════ メインエリア ══════════════ -->
 <div id="main">
   <div id="topbar">
+    <button id="hamburger" onclick="openNav()">☰</button>
     <div class="page-title" id="page-title">ダッシュボード</div>
     <div class="date" id="topbar-date"></div>
     <div class="alert-bell" onclick="showScreen('alerts')">🔔<span class="dot"></span></div>
@@ -402,61 +535,97 @@ canvas.chart { width: 100% !important; }
       </div>
     </div>
 
-    <!-- ════════ カメラ映像 ════════ -->
+    <!-- ════════ カメラ映像（4画面） ════════ -->
     <div class="screen" id="screen-camera">
-      <div class="flex-row" style="align-items:flex-start;">
-        <div style="flex:0 0 auto; max-width:580px; width:100%;">
-          <div id="camera-wrap">
-            <video id="cam-video" autoplay loop muted playsinline>
-              <source src="movie01.mp4" type="video/mp4">
-            </video>
-            <canvas id="cam-canvas"></canvas>
-            <div class="live-badge">● LIVE</div>
-            <div class="count-badge" id="count-badge">認識中: 0羽</div>
-          </div>
-          <div style="margin-top:8px; font-size:11px; color:var(--text-sub); text-align:center;">
-            🔴 YOLOv4 個体認識 リアルタイム解析中
-          </div>
+
+      <!-- 4カメラグリッド -->
+      <div class="cam4-grid" id="cam4-grid">
+        <!-- 第1鶏舎 A棟 -->
+        <div class="cam4-cell" id="cam4-0">
+          <video autoplay loop muted playsinline style="width:100%;display:block;">
+            <source src="movie01.mp4" type="video/mp4">
+          </video>
+          <canvas></canvas>
+          <div class="cam4-live">● LIVE</div>
+          <div class="cam4-label">第1鶏舎 A棟</div>
+          <div class="cam4-count">—</div>
         </div>
-
-        <div class="cam-panel">
-          <div class="metric-row">
-            <div class="metric-box">
-              <div class="val" id="metric-count">—</div>
-              <div class="lbl">認識個体数</div>
-            </div>
-            <div class="metric-box">
-              <div class="val" id="metric-weight">2.93</div>
-              <div class="lbl">推定平均体重 kg</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">認識精度</div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); margin-bottom:6px;">
-              <span>信頼度スコア</span><span id="confidence-val">—</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar green" id="confidence-bar" style="width:0%"></div></div>
-
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); margin-bottom:6px; margin-top:12px;">
-              <span>出荷基準達成率（3kg）</span><span>94%</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar blue" style="width:94%"></div></div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">鶏舎情報</div>
-            <table class="tbl" style="font-size:12px;">
-              <tr><td style="color:var(--text-sub); border:none;">日齢</td><td style="border:none;"><strong>43日目</strong></td></tr>
-              <tr><td style="color:var(--text-sub); border:none;">総羽数</td><td style="border:none;"><strong>12,400羽</strong></td></tr>
-              <tr><td style="color:var(--text-sub); border:none;">温度</td><td style="border:none;"><strong>29.2℃</strong> ✅</td></tr>
-              <tr><td style="color:var(--text-sub); border:none;">湿度</td><td style="border:none;"><strong>65%</strong> ✅</td></tr>
-              <tr><td style="color:var(--text-sub); border:none;">出荷予定</td><td style="border:none;"><strong style="color:var(--success)">7月12日</strong></td></tr>
-            </table>
-          </div>
-
-          <button class="btn btn-secondary" onclick="showScreen('weight')">⚖️ 体重推定を確認</button>
+        <!-- 第2鶏舎 B棟 -->
+        <div class="cam4-cell" id="cam4-1">
+          <video autoplay loop muted playsinline style="width:100%;display:block;">
+            <source src="movie01.mp4" type="video/mp4">
+          </video>
+          <canvas></canvas>
+          <div class="cam4-live">● LIVE</div>
+          <div class="cam4-label">第2鶏舎 B棟</div>
+          <div class="cam4-count">—</div>
         </div>
+        <!-- 第3鶏舎 C棟（警告） -->
+        <div class="cam4-cell" id="cam4-2">
+          <video autoplay loop muted playsinline style="width:100%;display:block;">
+            <source src="movie01.mp4" type="video/mp4">
+          </video>
+          <canvas></canvas>
+          <div class="cam4-live">● LIVE</div>
+          <div class="cam4-label">第3鶏舎 C棟 ⚠️</div>
+          <div class="cam4-count">—</div>
+        </div>
+        <!-- 第4鶏舎 D棟 -->
+        <div class="cam4-cell" id="cam4-3">
+          <video autoplay loop muted playsinline style="width:100%;display:block;">
+            <source src="movie01.mp4" type="video/mp4">
+          </video>
+          <canvas></canvas>
+          <div class="cam4-live">● LIVE</div>
+          <div class="cam4-label">第4鶏舎 D棟</div>
+          <div class="cam4-count">—</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text-sub); text-align:center; margin-bottom:12px;">
+        🔴 YOLOv4 個体認識 リアルタイム解析中（全4鶏舎）
+      </div>
+
+      <!-- 集計パネル -->
+      <div class="metric-row" style="margin-bottom:12px;">
+        <div class="metric-box">
+          <div class="val" id="metric-count">—</div>
+          <div class="lbl">全鶏舎 認識個体数</div>
+        </div>
+        <div class="metric-box">
+          <div class="val" id="metric-weight">2.93</div>
+          <div class="lbl">平均推定体重 kg</div>
+        </div>
+        <div class="metric-box">
+          <div class="val" id="confidence-val" style="font-size:18px;">—</div>
+          <div class="lbl">平均信頼度スコア</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">AI認識精度</div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); margin-bottom:6px;">
+            <span>信頼度スコア（全鶏舎平均）</span><span id="confidence-val2">—</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-bar green" id="confidence-bar" style="width:0%"></div></div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); margin-bottom:6px; margin-top:12px;">
+            <span>出荷基準達成率（3kg / A棟）</span><span>94%</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-bar blue" style="width:94%"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">鶏舎別ステータス</div>
+          <table class="tbl" style="font-size:12px;">
+            <tr><th>鶏舎</th><th>日齢</th><th>推定体重</th><th>温度</th></tr>
+            <tr><td>A棟</td><td>43日</td><td><strong>2.93 kg</strong></td><td>29.2℃ ✅</td></tr>
+            <tr><td>B棟</td><td>38日</td><td><strong>2.61 kg</strong></td><td>28.8℃ ✅</td></tr>
+            <tr><td>C棟 ⚠️</td><td>31日</td><td><strong>1.98 kg</strong></td><td style="color:var(--danger)">32.4℃ ❌</td></tr>
+            <tr><td>D棟</td><td>21日</td><td><strong>0.89 kg</strong></td><td>29.5℃ ✅</td></tr>
+          </table>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary" onclick="showScreen('weight')">⚖️ 体重推定を確認</button>
       </div>
     </div>
 
@@ -562,7 +731,7 @@ canvas.chart { width: 100% !important; }
             <span class="badge orange" style="cursor:pointer">遅延懸念</span>
           </div>
         </div>
-        <table class="tbl">
+        <div class="tbl-scroll"><table class="tbl">
           <tr>
             <th>ロットID</th><th>鶏舎</th><th>日齢</th><th>推定体重</th>
             <th>目標比</th><th>出荷予測日</th><th>ステータス</th>
@@ -615,7 +784,7 @@ canvas.chart { width: 100% !important; }
             <td><strong>8/5</strong></td>
             <td><span class="badge blue">育成中</span></td>
           </tr>
-        </table>
+        </table></div>
       </div>
     </div>
 
@@ -721,175 +890,208 @@ canvas.chart { width: 100% !important; }
   </div><!-- /content -->
 </div><!-- /main -->
 
+<!-- スマホ用オーバーレイ -->
+<div id="nav-overlay" onclick="closeNav()"></div>
+
+<!-- スマホ用ボトムナビ -->
+<nav id="bottom-nav">
+  <button class="bn-item active" onclick="showScreen('dashboard');setBottomActive(this)">
+    <span class="bn-icon">🏠</span>ホーム
+  </button>
+  <button class="bn-item" onclick="showScreen('camera');setBottomActive(this)">
+    <span class="bn-icon">📷</span>カメラ
+  </button>
+  <button class="bn-item" onclick="showScreen('weight');setBottomActive(this)">
+    <span class="bn-icon">⚖️</span>体重
+  </button>
+  <button class="bn-item" onclick="showScreen('shipment');setBottomActive(this)">
+    <span class="bn-icon">🚚</span>出荷
+  </button>
+  <button class="bn-item" onclick="showScreen('alerts');setBottomActive(this)" style="position:relative;">
+    <span class="bn-icon">🔔</span>アラート
+    <span class="bn-badge" id="bn-badge">3</span>
+  </button>
+</nav>
+
 <div id="toast"></div>
 
 <script>
-// ── ページタイトル設定 ──────────────────────────────────────────────────────
+// ── ページタイトル ──────────────────────────────────────────────────────────
 const titles = {
-  dashboard: 'ダッシュボード',
-  camera:    'カメラ映像 — 第1鶏舎 A棟',
-  weight:    '体重推定 — LOT-001',
-  growth:    '成長曲線 — LOT-001',
-  shipment:  '出荷判定',
-  health:    '健康モニター — 第1鶏舎',
-  alerts:    'アラート一覧',
+  dashboard:'ダッシュボード', camera:'カメラ映像 — 全4鶏舎',
+  weight:'体重推定 — LOT-001', growth:'成長曲線 — LOT-001',
+  shipment:'出荷判定', health:'健康モニター — 第1鶏舎', alerts:'アラート一覧',
 };
-
-// 今日の日付
 document.getElementById('topbar-date').textContent =
-  new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+  new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
 
-// ── 画面切替 ──────────────────────────────────────────────────────────────────
+// ── ドロワー制御 ─────────────────────────────────────────────────────────────
+function openNav()  { document.getElementById('nav').classList.add('open'); document.getElementById('nav-overlay').classList.add('open'); }
+function closeNav() { document.getElementById('nav').classList.remove('open'); document.getElementById('nav-overlay').classList.remove('open'); }
+
+// ── ボトムナビ active ────────────────────────────────────────────────────────
+function setBottomActive(el) {
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  closeNav();
+}
+
+// ── 画面切替 ─────────────────────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('screen-' + id).classList.add('active');
-  document.getElementById('page-title').textContent = titles[id] || id;
+  document.getElementById('screen-'+id).classList.add('active');
+  document.getElementById('page-title').textContent = titles[id]||id;
   document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'"))
-      n.classList.add('active');
+    if (n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
   });
-  // 遅延初期化
-  if (id === 'camera')   initCamera();
-  if (id === 'weight')   initWeightCharts();
-  if (id === 'growth')   initGrowthChart();
-  if (id === 'health')   initHealthChart();
+  closeNav();
+  if (id==='camera')  initCamera4();
+  if (id==='weight')  initWeightCharts();
+  if (id==='growth')  initGrowthChart();
+  if (id==='health')  initHealthChart();
 }
 
-// ── トースト ──────────────────────────────────────────────────────────────────
-function showToast(msg, color) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = color || 'var(--success)';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+// ── トースト ─────────────────────────────────────────────────────────────────
+function showToast(msg,color){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=color||'var(--success)';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-// ── アラートクリア ────────────────────────────────────────────────────────────
-function clearAlerts() {
-  document.querySelectorAll('#alert-list-full .alert-unread').forEach(d => d.remove());
-  document.querySelector('.alert-bell .dot').style.display = 'none';
-  document.querySelector('.nav-badge').style.display = 'none';
+// ── アラートクリア ───────────────────────────────────────────────────────────
+function clearAlerts(){
+  document.querySelectorAll('#alert-list-full .alert-unread').forEach(d=>d.remove());
+  document.querySelector('.alert-bell .dot').style.display='none';
+  document.querySelector('.nav-badge').style.display='none';
+  const bn=document.getElementById('bn-badge'); if(bn) bn.style.display='none';
   showToast('✅ 全てのアラートを既読にしました');
 }
 
-// ── 出荷詳細 ─────────────────────────────────────────────────────────────────
-function showShipDetail(lot) {
-  showToast(`📋 ${lot} の詳細を読み込み中...`, 'var(--secondary)');
-  setTimeout(() => showScreen('growth'), 600);
+function showShipDetail(lot){
+  showToast(`📋 ${lot} の詳細を読み込み中...`,'var(--secondary)');
+  setTimeout(()=>showScreen('growth'),600);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// カメラ — YOLOv4シミュレーション
+// 4カメラ YOLOv4シミュレーション
 // ══════════════════════════════════════════════════════════════════════════════
-let cameraInited = false;
-let animFrameId = null;
+let camera4Inited = false;
 
-function initCamera() {
-  if (cameraInited) return;
-  cameraInited = true;
+// 各カメラの設定
+const CAM_CONFIGS = [
+  { baseCount:20, baseWeight:2.93, color:'#00FF88', speedMul:1.0 },  // A棟 – 緑
+  { baseCount:18, baseWeight:2.61, color:'#5BB8FF', speedMul:0.9 },  // B棟 – 水色
+  { baseCount:22, baseWeight:1.98, color:'#FFB830', speedMul:1.2 },  // C棟 – 橙（成長遅延）
+  { baseCount:24, baseWeight:0.89, color:'#FF70B0', speedMul:1.4 },  // D棟 – ピンク（若鶏）
+];
 
-  const video   = document.getElementById('cam-video');
-  const canvas  = document.getElementById('cam-canvas');
-  const wrap    = document.getElementById('camera-wrap');
-  const ctx     = canvas.getContext('2d');
-  const countEl = document.getElementById('count-badge');
+function makeSeed(n, w, h, cfg) {
+  const birds = [];
+  for (let i=0; i<n; i++) {
+    const bw = 22 + Math.random()*20;
+    const bh = bw*(0.7+Math.random()*0.4);
+    birds.push({
+      x: bw/2+Math.random()*(w-bw), y: bh/2+Math.random()*(h-bh),
+      w: bw, h: bh,
+      vx:(Math.random()-0.5)*0.7*cfg.speedMul,
+      vy:(Math.random()-0.5)*0.5*cfg.speedMul,
+      conf: 0.78+Math.random()*0.20,
+      weight:(cfg.baseWeight*0.9+Math.random()*cfg.baseWeight*0.2).toFixed(2),
+      phase:Math.random()*Math.PI*2,
+    });
+  }
+  return birds;
+}
+
+function initCamera4() {
+  if (camera4Inited) return;
+  camera4Inited = true;
+
   const metricCount  = document.getElementById('metric-count');
   const metricWeight = document.getElementById('metric-weight');
-  const confVal  = document.getElementById('confidence-val');
-  const confBar  = document.getElementById('confidence-bar');
+  const confVal      = document.getElementById('confidence-val');
+  const confVal2     = document.getElementById('confidence-val2');
+  const confBar      = document.getElementById('confidence-bar');
 
-  // 疑似個体データ生成
-  let chickens = [];
-  function seedChickens(w, h) {
-    chickens = [];
-    const n = 18 + Math.floor(Math.random() * 6);
-    for (let i = 0; i < n; i++) {
-      const bw = 40 + Math.random() * 36;
-      const bh = bw * (0.8 + Math.random() * 0.4);
-      chickens.push({
-        x: bw/2 + Math.random() * (w - bw),
-        y: bh/2 + Math.random() * (h - bh),
-        w: bw, h: bh,
-        vx: (Math.random()-0.5)*0.8,
-        vy: (Math.random()-0.5)*0.6,
-        conf: 0.78 + Math.random()*0.20,
-        weight: (2.6 + Math.random()*0.7).toFixed(2),
-        phase: Math.random()*Math.PI*2,
-      });
-    }
-  }
+  const camData = [];
 
-  function resizeCanvas() {
-    canvas.width  = wrap.clientWidth;
-    canvas.height = wrap.clientHeight;
-    const vw = wrap.clientWidth, vh = wrap.clientHeight;
-    if (chickens.length === 0) seedChickens(vw, vh);
-  }
+  for (let ci=0; ci<4; ci++) {
+    const cell   = document.getElementById('cam4-'+ci);
+    const video  = cell.querySelector('video');
+    const canvas = cell.querySelector('canvas');
+    const countEl= cell.querySelector('.cam4-count');
+    const cfg    = CAM_CONFIGS[ci];
+    const ctx    = canvas.getContext('2d');
+    let birds    = [];
 
-  resizeCanvas();
-  new ResizeObserver(resizeCanvas).observe(wrap);
-
-  let tick = 0;
-  function draw() {
-    animFrameId = requestAnimationFrame(draw);
-    tick++;
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-
-    let totalConf = 0, visCount = 0;
-    chickens.forEach((c, i) => {
-      // ゆらぎ移動
-      c.phase += 0.03;
-      c.x += c.vx + Math.sin(c.phase + i)*0.3;
-      c.y += c.vy + Math.cos(c.phase + i*1.3)*0.25;
-      // 壁バウンス
-      if (c.x < c.w/2 || c.x > W - c.w/2) c.vx *= -1;
-      if (c.y < c.h/2 || c.y > H - c.h/2) c.vy *= -1;
-      c.x = Math.max(c.w/2, Math.min(W - c.w/2, c.x));
-      c.y = Math.max(c.h/2, Math.min(H - c.h/2, c.y));
-
-      // フリッカーで非表示を演出（認識ミス）
-      if (Math.random() < 0.004) return;
-      visCount++;
-      totalConf += c.conf;
-
-      const x1 = c.x - c.w/2, y1 = c.y - c.h/2;
-      const confColor = c.conf > 0.9 ? '#00FF88' : c.conf > 0.8 ? '#FFE000' : '#FF6644';
-
-      // バウンディングボックス
-      ctx.strokeStyle = confColor;
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(x1, y1, c.w, c.h);
-
-      // ラベル背景
-      const label = `${(c.conf*100).toFixed(0)}% ${c.weight}kg`;
-      ctx.font = '9px Arial';
-      const lw = ctx.measureText(label).width + 6;
-      ctx.fillStyle = confColor;
-      ctx.fillRect(x1, y1 - 14, lw, 14);
-      ctx.fillStyle = '#000';
-      ctx.fillText(label, x1 + 3, y1 - 3);
+    // 動画タイミングをずらす
+    video.addEventListener('loadedmetadata', () => {
+      video.currentTime = ci * 12;
     });
 
-    // 情報更新（30フレームごと）
-    if (tick % 30 === 0) {
-      const avgConf = visCount ? (totalConf / visCount * 100).toFixed(1) : 0;
-      countEl.textContent = `認識中: ${visCount}羽`;
-      metricCount.textContent = visCount;
-      confVal.textContent = avgConf + '%';
-      confBar.style.width = avgConf + '%';
+    function resize() {
+      canvas.width  = cell.clientWidth;
+      canvas.height = cell.clientHeight;
+      if (!birds.length) birds = makeSeed(cfg.baseCount+Math.floor(Math.random()*4), canvas.width, canvas.height, cfg);
+    }
+    resize();
+    new ResizeObserver(resize).observe(cell);
+
+    camData.push({ ctx, canvas, cell, countEl, cfg, birds, tick:0 });
+  }
+
+  // 全カメラまとめて描画
+  let totalCountGlobal=0, totalConfGlobal=0, totalConfN=0;
+  let frameTick=0;
+
+  function drawAll() {
+    requestAnimationFrame(drawAll);
+    frameTick++;
+    totalCountGlobal=0; totalConfGlobal=0; totalConfN=0;
+
+    camData.forEach(d => {
+      const {ctx,canvas,cfg,countEl} = d;
+      const W=canvas.width, H=canvas.height;
+      ctx.clearRect(0,0,W,H);
+      let vis=0, sumConf=0;
+
+      d.birds.forEach((c,i) => {
+        c.phase += 0.025;
+        c.x += c.vx + Math.sin(c.phase+i)*0.25;
+        c.y += c.vy + Math.cos(c.phase+i*1.3)*0.2;
+        if(c.x<c.w/2||c.x>W-c.w/2) c.vx*=-1;
+        if(c.y<c.h/2||c.y>H-c.h/2) c.vy*=-1;
+        c.x=Math.max(c.w/2,Math.min(W-c.w/2,c.x));
+        c.y=Math.max(c.h/2,Math.min(H-c.h/2,c.y));
+        if(Math.random()<0.003) return;
+        vis++; sumConf+=c.conf;
+
+        const x1=c.x-c.w/2, y1=c.y-c.h/2;
+        ctx.strokeStyle=cfg.color; ctx.lineWidth=1.2;
+        ctx.strokeRect(x1,y1,c.w,c.h);
+        const lbl=`${(c.conf*100).toFixed(0)}%`;
+        ctx.font='8px Arial';
+        const lw=ctx.measureText(lbl).width+4;
+        ctx.fillStyle=cfg.color; ctx.fillRect(x1,y1-12,lw,12);
+        ctx.fillStyle='#000'; ctx.fillText(lbl,x1+2,y1-2);
+      });
+
+      totalCountGlobal+=vis; totalConfGlobal+=sumConf; totalConfN+=vis;
+      if(frameTick%30===0 && countEl) countEl.textContent=vis+'羽';
+    });
+
+    // 集計表示（60フレームごと）
+    if(frameTick%60===0) {
+      const avgConf = totalConfN ? (totalConfGlobal/totalConfN*100).toFixed(1) : 0;
+      if(metricCount)  metricCount.textContent  = totalCountGlobal;
+      if(confVal)      confVal.textContent       = avgConf+'%';
+      if(confVal2)     confVal2.textContent      = avgConf+'%';
+      if(confBar)      confBar.style.width       = avgConf+'%';
     }
   }
 
-  video.addEventListener('loadedmetadata', () => {
-    seedChickens(canvas.width || 480, canvas.height || 360);
-    draw();
-  });
-  if (video.readyState >= 1) {
-    seedChickens(canvas.width || 480, canvas.height || 360);
-    draw();
-  }
+  drawAll();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
