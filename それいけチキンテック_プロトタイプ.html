@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>それいけチキンテック — プロトタイプ</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1F4E79;
+  --secondary: #2E75B6;
+  --light-blue: #EBF3FB;
+  --success: #2E7D52;
+  --warning: #D48F00;
+  --danger: #C0392B;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text: #222222;
+  --text-sub: #555555;
+  --border: #DDDDDD;
+  --nav-w: 220px;
+}
+body { font-family: "Hiragino Sans", "Meiryo", "Yu Gothic", Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; font-size: 14px; }
+
+/* ── サイドナビ ── */
+#nav {
+  width: var(--nav-w); min-width: var(--nav-w);
+  background: var(--primary);
+  display: flex; flex-direction: column;
+  padding: 0;
+  user-select: none;
+}
+#nav-logo {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+#nav-logo .title { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.3; }
+#nav-logo .sub   { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+.nav-section-label { font-size: 10px; color: rgba(255,255,255,0.4); padding: 14px 16px 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.14); color: #fff; border-left-color: #5BB8FF; font-weight: 600; }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px;
+}
+#nav-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.12); }
+#nav-footer .farm-name { font-size: 12px; color: rgba(255,255,255,0.6); }
+#nav-footer .user { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+/* ── メインエリア ── */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#topbar {
+  height: 52px; min-height: 52px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 12px;
+}
+#topbar .page-title { font-size: 16px; font-weight: 700; color: var(--primary); flex: 1; }
+#topbar .date { font-size: 12px; color: var(--text-sub); }
+.alert-bell { position: relative; cursor: pointer; font-size: 18px; }
+.alert-bell .dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; border: 2px solid #fff; }
+#content { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* ── スクリーン ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── カード ── */
+.card { background: var(--card); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 16px; }
+.card-title { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ── KPIカード ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi-card {
+  background: var(--card);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 16px;
+  border-top: 4px solid var(--secondary);
+  cursor: pointer; transition: transform 0.12s;
+}
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card.green { border-top-color: var(--success); }
+.kpi-card.orange { border-top-color: var(--warning); }
+.kpi-card.red { border-top-color: var(--danger); }
+.kpi-label { font-size: 11px; color: var(--text-sub); margin-bottom: 6px; }
+.kpi-value { font-size: 30px; font-weight: 700; color: var(--primary); line-height: 1; }
+.kpi-unit { font-size: 13px; font-weight: 400; color: var(--text-sub); margin-left: 3px; }
+.kpi-sub { font-size: 11px; color: var(--text-sub); margin-top: 4px; }
+
+/* ── グリッドレイアウト ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.col-span-2 { grid-column: span 2; }
+
+/* ── 鶏舎カード ── */
+.barn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.barn-card {
+  background: var(--card); border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  padding: 14px; cursor: pointer;
+  transition: box-shadow 0.12s, transform 0.12s;
+  border-left: 4px solid var(--success);
+}
+.barn-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.13); transform: translateY(-1px); }
+.barn-card.warn { border-left-color: var(--warning); }
+.barn-name { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.barn-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+.barn-row strong { color: var(--text); }
+.health-score { font-size: 18px; font-weight: 700; }
+.health-score.good { color: var(--success); }
+.health-score.warn { color: var(--warning); }
+
+/* ── テーブル ── */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { background: var(--primary); color: #fff; padding: 10px 12px; text-align: left; font-size: 12px; }
+.tbl td { padding: 10px 12px; border-bottom: 1px solid #EEE; font-size: 13px; }
+.tbl tr:nth-child(even) td { background: #F5F9FF; }
+.tbl tr:hover td { background: var(--light-blue); }
+.tbl tr.clickable { cursor: pointer; }
+
+/* ── バッジ ── */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.badge.green  { background: #D4EDDA; color: #155724; }
+.badge.orange { background: #FFF3CD; color: #856404; }
+.badge.red    { background: #F8D7DA; color: #721C24; }
+.badge.blue   { background: #CCE5FF; color: #004085; }
+
+/* ── カメラ画面 ── */
+#camera-wrap {
+  position: relative; background: #000; border-radius: 8px; overflow: hidden;
+  width: 100%; max-width: 580px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+#cam-video { width: 100%; display: block; }
+#cam-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.live-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: var(--danger); color: #fff;
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.count-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,0.65); color: #fff;
+  font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px;
+}
+.cam-panel { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.metric-row { display: flex; gap: 10px; }
+.metric-box {
+  flex: 1; background: var(--card); border-radius: 8px;
+  padding: 12px; text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.metric-box .val { font-size: 24px; font-weight: 700; color: var(--primary); }
+.metric-box .lbl { font-size: 11px; color: var(--text-sub); margin-top: 3px; }
+
+/* ── プログレスバー ── */
+.progress-wrap { background: #eee; border-radius: 4px; height: 8px; overflow: hidden; }
+.progress-bar  { height: 100%; border-radius: 4px; transition: width 1s; }
+.progress-bar.green  { background: var(--success); }
+.progress-bar.blue   { background: var(--secondary); }
+
+/* ── 簡易グラフ（Canvas） ── */
+.chart-wrap { position: relative; width: 100%; }
+canvas.chart { width: 100% !important; }
+
+/* ── アラートリスト ── */
+.alert-list { display: flex; flex-direction: column; gap: 8px; }
+.alert-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--card); border-radius: 6px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--danger);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.alert-item.orange { border-left-color: var(--warning); }
+.alert-item.blue   { border-left-color: var(--secondary); }
+.alert-item.green  { border-left-color: var(--success); }
+.alert-icon { font-size: 18px; margin-top: 1px; }
+.alert-body { flex: 1; }
+.alert-title { font-size: 13px; font-weight: 600; }
+.alert-desc  { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+.alert-time  { font-size: 11px; color: var(--text-sub); white-space: nowrap; }
+.alert-unread { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+/* ── ゲージ ── */
+.gauge-wrap { text-align: center; padding: 8px 0; }
+.gauge-val { font-size: 40px; font-weight: 700; line-height: 1; }
+.gauge-label { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+
+/* ── ボタン ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 6px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #163A5C; }
+.btn-secondary { background: #fff; color: var(--secondary); border: 1.5px solid var(--secondary); }
+.btn-secondary:hover { background: var(--light-blue); }
+.btn-danger { background: var(--danger); color: #fff; }
+
+/* ── 散布図エリア ── */
+.scatter-mock {
+  position: relative; background: #F9FBFF; border-radius: 8px;
+  border: 1px solid var(--border); overflow: hidden;
+  height: 200px;
+  display: flex; align-items: center; justify-content: center;
+}
+.scatter-mock canvas { position: absolute; top: 0; left: 0; }
+
+/* ── トースト ── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--success); color: #fff;
+  padding: 12px 20px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s; z-index: 9999;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── セクションヘッダ ── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.section-header h2 { font-size: 14px; font-weight: 700; color: var(--primary); }
+
+/* ── 仕切り ── */
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ── 出荷ゲージ ── */
+.ship-bar-wrap { margin: 8px 0; }
+.ship-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
+
+/* ── フレックスレイアウト ── */
+.flex-row { display: flex; gap: 14px; }
+.flex-col { display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ サイドナビ ══════════════ -->
+<nav id="nav">
+  <div id="nav-logo">
+    <div class="title">🐔 それいけチキンテック</div>
+    <div class="sub">AI養鶏管理プラットフォーム</div>
+  </div>
+
+  <div class="nav-section-label">メニュー</div>
+  <div class="nav-item active" onclick="showScreen('dashboard')">
+    <span class="icon">🏠</span> ダッシュボード
+  </div>
+  <div class="nav-item" onclick="showScreen('camera')">
+    <span class="icon">📷</span> カメラ映像
+  </div>
+  <div class="nav-item" onclick="showScreen('weight')">
+    <span class="icon">⚖️</span> 体重推定
+  </div>
+  <div class="nav-item" onclick="showScreen('growth')">
+    <span class="icon">📈</span> 成長曲線
+  </div>
+  <div class="nav-item" onclick="showScreen('shipment')">
+    <span class="icon">🚚</span> 出荷判定
+  </div>
+
+  <div class="nav-section-label">管理</div>
+  <div class="nav-item" onclick="showScreen('health')">
+    <span class="icon">🐔</span> 健康モニター
+  </div>
+  <div class="nav-item" onclick="showScreen('alerts')">
+    <span class="icon">🔔</span> アラート
+    <span class="nav-badge">3</span>
+  </div>
+
+  <div id="nav-footer">
+    <div class="farm-name">🏡 有田農場 第3鶏舎</div>
+    <div class="user">管理者: チカイケ秀夫</div>
+  </div>
+</nav>
+
+<!-- ══════════════ メインエリア ══════════════ -->
+<div id="main">
+  <div id="topbar">
+    <div class="page-title" id="page-title">ダッシュボード</div>
+    <div class="date" id="topbar-date"></div>
+    <div class="alert-bell" onclick="showScreen('alerts')">🔔<span class="dot"></span></div>
+  </div>
+
+  <div id="content">
+
+    <!-- ════════ ダッシュボード ════════ -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card" onclick="showScreen('weight')">
+          <div class="kpi-label">稼働ロット数</div>
+          <div class="kpi-value">4<span class="kpi-unit">ロット</span></div>
+          <div class="kpi-sub">目標: 5ロット</div>
+        </div>
+        <div class="kpi-card green" onclick="showScreen('weight')">
+          <div class="kpi-label">平均推定体重</div>
+          <div class="kpi-value">2.81<span class="kpi-unit">kg</span></div>
+          <div class="kpi-sub">📈 目標3kgまで+0.19kg</div>
+        </div>
+        <div class="kpi-card" onclick="showScreen('shipment')">
+          <div class="kpi-label">今週出荷予定</div>
+          <div class="kpi-value">2<span class="kpi-unit">ロット</span></div>
+          <div class="kpi-sub">合計 約4.8万羽</div>
+        </div>
+        <div class="kpi-card orange" onclick="showScreen('alerts')">
+          <div class="kpi-label">未対応アラート</div>
+          <div class="kpi-value">3<span class="kpi-unit">件</span></div>
+          <div class="kpi-sub">⚠️ 要確認</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>🏡 鶏舎一覧</h2>
+        <span style="font-size:12px;color:var(--text-sub)">最終更新: 2分前</span>
+      </div>
+      <div class="barn-grid" style="margin-bottom:16px;">
+        <div class="barn-card" onclick="showScreen('camera')">
+          <div class="barn-name">第1鶏舎（A棟）</div>
+          <div class="barn-row"><span>日齢</span><strong>43日</strong></div>
+          <div class="barn-row"><span>推定体重</span><strong>2.93 kg</strong></div>
+          <div class="barn-row"><span>推定羽数</span><strong>12,400羽</strong></div>
+          <div class="barn-row" style="margin-top:8px;"><span>健康スコア</span><span class="health-score good">87</span></div>
+        </div>
+        <div class="barn-card" onclick="showScreen('camera')">
+          <div class="barn-name">第2鶏舎（B棟）</div>
+          <div class="barn-row"><span>日齢</span><strong>38日</strong></div>
+          <div class="barn-row"><span>推定体重</span><strong>2.61 kg</strong></div>
+          <div class="barn-row"><span>推定羽数</span><strong>11,800羽</strong></div>
+          <div class="barn-row" style="margin-top:8px;"><span>健康スコア</span><span class="health-score good">82</span></div>
+        </div>
+        <div class="barn-card warn" onclick="showScreen('camera')">
+          <div class="barn-name">第3鶏舎（C棟）⚠️</div>
+          <div class="barn-row"><span>日齢</span><strong>31日</strong></div>
+          <div class="barn-row"><span>推定体重</span><strong>1.98 kg</strong></div>
+          <div class="barn-row"><span>推定羽数</span><strong>13,200羽</strong></div>
+          <div class="barn-row" style="margin-top:8px;"><span>健康スコア</span><span class="health-score warn">63</span></div>
+        </div>
+        <div class="barn-card" onclick="showScreen('camera')">
+          <div class="barn-name">第4鶏舎（D棟）</div>
+          <div class="barn-row"><span>日齢</span><strong>21日</strong></div>
+          <div class="barn-row"><span>推定体重</span><strong>0.89 kg</strong></div>
+          <div class="barn-row"><span>推定羽数</span><strong>14,000羽</strong></div>
+          <div class="barn-row" style="margin-top:8px;"><span>健康スコア</span><span class="health-score good">91</span></div>
+        </div>
+      </div>
+
+      <div class="section-header"><h2>🔔 最新アラート</h2></div>
+      <div class="alert-list">
+        <div class="alert-item">
+          <div class="alert-unread"></div>
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">第3鶏舎 成長遅延を検知</div>
+            <div class="alert-desc">標準成長値を15%下回っています。給餌量を確認してください。</div>
+          </div>
+          <div class="alert-time">10分前</div>
+        </div>
+        <div class="alert-item orange">
+          <div class="alert-unread" style="background:var(--warning)"></div>
+          <div class="alert-icon">🌡️</div>
+          <div class="alert-body">
+            <div class="alert-title">第3鶏舎 温度異常</div>
+            <div class="alert-desc">鶏舎内温度が32℃を超えました（目標28〜30℃）。</div>
+          </div>
+          <div class="alert-time">1時間前</div>
+        </div>
+        <div class="alert-item blue">
+          <div class="alert-icon">📄</div>
+          <div class="alert-body">
+            <div class="alert-title">週次精度レポートが生成されました</div>
+            <div class="alert-desc">今週の平均推定誤差: ±82g（目標±100g以内 ✅）</div>
+          </div>
+          <div class="alert-time">昨日</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ カメラ映像 ════════ -->
+    <div class="screen" id="screen-camera">
+      <div class="flex-row" style="align-items:flex-start;">
+        <div style="flex:0 0 auto; max-width:580px; width:100%;">
+          <div id="camera-wrap">
+            <video id="cam-video" autoplay loop muted playsinline>
+              <source src="出荷日の鶏の様子.mp4" type="video/mp4">
+            </video>
+            <canvas id="cam-canvas"></canvas>
+            <div class="live-badge">● LIVE</div>
+            <div class="count-badge" id="count-badge">認識中: 0羽</div>
+          </div>
+          <div style="margin-top:8px; font-size:11px; color:var(--text-sub); text-align:center;">
+            🔴 YOLOv4 個体認識 リアルタイム解析中
+          </div>
+        </div>
+
+        <div class="cam-panel">
+          <div class="metric-row">
+            <div class="metric-box">
+              <div class="val" id="metric-count">—</div>
+              <div class="lbl">認識個体数</div>
+            </div>
+            <div class="metric-box">
+              <div class="val" id="metric-weight">2.93</div>
+              <div class="lbl">推定平均体重 kg</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">認識精度</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); margin-bottom:6px;">
+              <span>信頼度スコア</span><span id="confidence-val">—</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar green" id="confidence-bar" style="width:0%"></div></div>
+
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); margin-bottom:6px; margin-top:12px;">
+              <span>出荷基準達成率（3kg）</span><span>94%</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar blue" style="width:94%"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">鶏舎情報</div>
+            <table class="tbl" style="font-size:12px;">
+              <tr><td style="color:var(--text-sub); border:none;">日齢</td><td style="border:none;"><strong>43日目</strong></td></tr>
+              <tr><td style="color:var(--text-sub); border:none;">総羽数</td><td style="border:none;"><strong>12,400羽</strong></td></tr>
+              <tr><td style="color:var(--text-sub); border:none;">温度</td><td style="border:none;"><strong>29.2℃</strong> ✅</td></tr>
+              <tr><td style="color:var(--text-sub); border:none;">湿度</td><td style="border:none;"><strong>65%</strong> ✅</td></tr>
+              <tr><td style="color:var(--text-sub); border:none;">出荷予定</td><td style="border:none;"><strong style="color:var(--success)">7月12日</strong></td></tr>
+            </table>
+          </div>
+
+          <button class="btn btn-secondary" onclick="showScreen('weight')">⚖️ 体重推定を確認</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ 体重推定 ════════ -->
+    <div class="screen" id="screen-weight">
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="kpi-card green">
+          <div class="kpi-label">推定平均体重</div>
+          <div class="kpi-value">2.93<span class="kpi-unit">kg</span></div>
+          <div class="kpi-sub">出荷目標 3.00 kg</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-label">推定誤差（実測比）</div>
+          <div class="kpi-value">±82<span class="kpi-unit">g</span></div>
+          <div class="kpi-sub">✅ 目標±100g以内</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">今週サンプル数</div>
+          <div class="kpi-value">48<span class="kpi-unit">件</span></div>
+          <div class="kpi-sub">実測計量件数</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:14px;">
+        <div class="card">
+          <div class="section-header"><h2>📊 体重分布 (本日)</h2></div>
+          <canvas id="histogram-canvas" height="200"></canvas>
+          <div style="font-size:11px; color:var(--text-sub); text-align:center; margin-top:6px;">縦線: 出荷基準 3.0kg</div>
+        </div>
+        <div class="card">
+          <div class="section-header"><h2>📋 統計サマリー</h2></div>
+          <table class="tbl">
+            <tr><th>指標</th><th>値</th></tr>
+            <tr><td>最小値</td><td><strong>2.21 kg</strong></td></tr>
+            <tr><td>最大値</td><td><strong>3.42 kg</strong></td></tr>
+            <tr><td>平均値</td><td><strong>2.93 kg</strong></td></tr>
+            <tr><td>中央値</td><td><strong>2.95 kg</strong></td></tr>
+            <tr><td>標準偏差</td><td><strong>±0.21 kg</strong></td></tr>
+            <tr><td>3kg以上の割合</td><td><strong style="color:var(--success)">41%</strong></td></tr>
+          </table>
+          <div style="margin-top:12px;">
+            <button class="btn btn-secondary" style="width:100%; justify-content:center;" onclick="showScreen('growth')">📈 成長曲線を見る</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header"><h2>🔬 実測 vs AI推定 比較</h2></div>
+        <canvas id="scatter-canvas" height="180"></canvas>
+        <div style="font-size:11px; color:var(--text-sub); text-align:center; margin-top:4px;">破線: 理想ライン (y=x) ／ 点: 各サンプル</div>
+      </div>
+    </div>
+
+    <!-- ════════ 成長曲線 ════════ -->
+    <div class="screen" id="screen-growth">
+      <div class="card" style="margin-bottom:14px; background:linear-gradient(90deg,#E8F4FD,#F5FBFF); border:1px solid #BDD9EF;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="font-size:28px;">📅</div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:var(--primary)">出荷予測日: <strong>2026年7月12日</strong>（あと3日）</div>
+            <div style="font-size:12px; color:var(--text-sub); margin-top:2px;">現在の成長率（+68g/日）で推定体重3.0kgに到達見込み（±2日）</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="section-header"><h2>📈 成長曲線（第1鶏舎 A棟）</h2></div>
+        <canvas id="growth-canvas" height="240"></canvas>
+        <div style="display:flex; gap:16px; font-size:11px; color:var(--text-sub); margin-top:8px; justify-content:center;">
+          <span>— 推定体重</span>
+          <span style="color:#999;">- - 標準値</span>
+          <span style="color:var(--success);">— 出荷基準 3kg</span>
+          <span style="color:#aaa;">… 予測</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header"><h2>📋 日齢別データ</h2></div>
+        <div style="max-height:220px; overflow-y:auto;">
+          <table class="tbl" id="growth-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ 出荷判定 ════════ -->
+    <div class="screen" id="screen-shipment">
+      <div class="card" style="margin-bottom:14px; background:#E8F6EE; border:1px solid #A8D5B8;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">🚚</span>
+          <div>
+            <div style="font-weight:700; color:var(--success); font-size:14px;">今週出荷可能: 2ロット（A棟・B棟）</div>
+            <div style="font-size:12px; color:var(--text-sub);">合計推定羽数 約24,200羽 / 推定出荷体重 平均2.97kg</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <h2>📋 ロット一覧</h2>
+          <div style="display:flex; gap:6px;">
+            <span class="badge green" style="cursor:pointer">出荷可</span>
+            <span class="badge blue" style="cursor:pointer">予定</span>
+            <span class="badge orange" style="cursor:pointer">遅延懸念</span>
+          </div>
+        </div>
+        <table class="tbl">
+          <tr>
+            <th>ロットID</th><th>鶏舎</th><th>日齢</th><th>推定体重</th>
+            <th>目標比</th><th>出荷予測日</th><th>ステータス</th>
+          </tr>
+          <tr class="clickable" onclick="showShipDetail('LOT-001')">
+            <td><strong>LOT-001</strong></td><td>第1鶏舎 A棟</td><td>43日</td>
+            <td><strong>2.93 kg</strong></td>
+            <td>
+              <div class="ship-bar-wrap">
+                <div class="ship-bar-label"><span>97.7%</span></div>
+                <div class="progress-wrap" style="width:120px;"><div class="progress-bar green" style="width:97.7%"></div></div>
+              </div>
+            </td>
+            <td><strong style="color:var(--success)">7/12</strong></td>
+            <td><span class="badge green">出荷可</span></td>
+          </tr>
+          <tr class="clickable" onclick="showShipDetail('LOT-002')">
+            <td><strong>LOT-002</strong></td><td>第2鶏舎 B棟</td><td>38日</td>
+            <td><strong>2.61 kg</strong></td>
+            <td>
+              <div class="ship-bar-wrap">
+                <div class="ship-bar-label"><span>87.0%</span></div>
+                <div class="progress-wrap" style="width:120px;"><div class="progress-bar blue" style="width:87%"></div></div>
+              </div>
+            </td>
+            <td><strong>7/17</strong></td>
+            <td><span class="badge blue">あと5日</span></td>
+          </tr>
+          <tr class="clickable">
+            <td><strong>LOT-003</strong></td><td>第3鶏舎 C棟</td><td>31日</td>
+            <td><strong>1.98 kg</strong></td>
+            <td>
+              <div class="ship-bar-wrap">
+                <div class="ship-bar-label"><span>66.0%</span></div>
+                <div class="progress-wrap" style="width:120px;"><div class="progress-bar" style="width:66%;background:var(--warning)"></div></div>
+              </div>
+            </td>
+            <td><strong style="color:var(--warning)">7/26 ⚠️</strong></td>
+            <td><span class="badge orange">遅延懸念</span></td>
+          </tr>
+          <tr class="clickable">
+            <td><strong>LOT-004</strong></td><td>第4鶏舎 D棟</td><td>21日</td>
+            <td><strong>0.89 kg</strong></td>
+            <td>
+              <div class="ship-bar-wrap">
+                <div class="ship-bar-label"><span>29.7%</span></div>
+                <div class="progress-wrap" style="width:120px;"><div class="progress-bar blue" style="width:29.7%"></div></div>
+              </div>
+            </td>
+            <td><strong>8/5</strong></td>
+            <td><span class="badge blue">育成中</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════════ 健康モニター ════════ -->
+    <div class="screen" id="screen-health">
+      <div class="grid-2" style="margin-bottom:14px;">
+        <div class="card" style="text-align:center;">
+          <div class="card-title">総合健康スコア（第1鶏舎）</div>
+          <div class="gauge-wrap">
+            <div class="gauge-val" style="color:var(--success)">87</div>
+            <div class="gauge-label">/ 100</div>
+          </div>
+          <div class="progress-wrap" style="margin:8px 0;">
+            <div class="progress-bar green" style="width:87%"></div>
+          </div>
+          <div style="font-size:12px; color:var(--success); font-weight:600;">✅ 健康状態は良好です</div>
+        </div>
+        <div class="card">
+          <div class="card-title">リアルタイム指標</div>
+          <table class="tbl" style="font-size:12px;">
+            <tr><td style="border:none; color:var(--text-sub)">活動量指数</td><td style="border:none;"><strong>72 / 100</strong> <span class="badge green">正常</span></td></tr>
+            <tr><td style="border:none; color:var(--text-sub)">密集度</td><td style="border:none;"><strong>8.4 羽/㎡</strong> <span class="badge green">正常</span></td></tr>
+            <tr><td style="border:none; color:var(--text-sub)">本日の死亡検知</td><td style="border:none;"><strong>1 羽</strong> <span class="badge orange">確認待ち</span></td></tr>
+            <tr><td style="border:none; color:var(--text-sub)">累計廃棄率</td><td style="border:none;"><strong>0.31%</strong> <span class="badge green">産業平均以下</span></td></tr>
+            <tr><td style="border:none; color:var(--text-sub)">鶏舎温度</td><td style="border:none;"><strong>29.2℃</strong> ✅</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-header"><h2>📊 活動量推移（本日）</h2></div>
+        <canvas id="health-canvas" height="180"></canvas>
+        <div style="font-size:11px; color:var(--text-sub); text-align:center; margin-top:4px;">灰帯: 正常範囲（平均±2σ）</div>
+      </div>
+    </div>
+
+    <!-- ════════ アラート ════════ -->
+    <div class="screen" id="screen-alerts">
+      <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+        <button class="btn btn-secondary" onclick="clearAlerts()">✓ 全て既読にする</button>
+      </div>
+      <div class="alert-list" id="alert-list-full">
+        <div class="alert-item" data-id="1">
+          <div class="alert-unread"></div>
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-body">
+            <div class="alert-title">第3鶏舎 成長遅延を検知</div>
+            <div class="alert-desc">推定体重が標準値を15%下回っています（1.98kg、標準2.34kg）。給餌量・温度管理を確認してください。</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="alert-time">10分前</div>
+            <span class="badge red" style="margin-top:4px;">緊急</span>
+          </div>
+        </div>
+        <div class="alert-item orange" data-id="2">
+          <div class="alert-unread" style="background:var(--warning)"></div>
+          <div class="alert-icon">🌡️</div>
+          <div class="alert-body">
+            <div class="alert-title">第3鶏舎 温度異常</div>
+            <div class="alert-desc">鶏舎内温度が32.4℃を超えました（目標: 28〜30℃）。換気システムを確認してください。</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="alert-time">1時間前</div>
+            <span class="badge orange" style="margin-top:4px;">警告</span>
+          </div>
+        </div>
+        <div class="alert-item orange" data-id="3">
+          <div class="alert-unread" style="background:var(--warning)"></div>
+          <div class="alert-icon">💀</div>
+          <div class="alert-body">
+            <div class="alert-title">第1鶏舎 死亡個体を検知</div>
+            <div class="alert-desc">本日1羽の死亡を検知しました。エリアC-3付近。現地確認をお願いします。</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="alert-time">3時間前</div>
+            <span class="badge orange" style="margin-top:4px;">警告</span>
+          </div>
+        </div>
+        <div class="alert-item green" data-id="4">
+          <div class="alert-icon">📄</div>
+          <div class="alert-body">
+            <div class="alert-title">週次精度レポートが生成されました</div>
+            <div class="alert-desc">今週の推定誤差平均: ±82g（目標±100g以内 ✅）。第1鶏舎の精度が最も高い結果でした。</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="alert-time">昨日</div>
+            <span class="badge blue" style="margin-top:4px;">情報</span>
+          </div>
+        </div>
+        <div class="alert-item green" data-id="5">
+          <div class="alert-icon">🚚</div>
+          <div class="alert-body">
+            <div class="alert-title">LOT-001 出荷適期に到達しました</div>
+            <div class="alert-desc">第1鶏舎 LOT-001の推定体重が2.93kgに達しました。出荷判定をご確認ください。</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="alert-time">2日前</div>
+            <span class="badge green" style="margin-top:4px;">情報</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<div id="toast"></div>
+
+<script>
+// ── ページタイトル設定 ──────────────────────────────────────────────────────
+const titles = {
+  dashboard: 'ダッシュボード',
+  camera:    'カメラ映像 — 第1鶏舎 A棟',
+  weight:    '体重推定 — LOT-001',
+  growth:    '成長曲線 — LOT-001',
+  shipment:  '出荷判定',
+  health:    '健康モニター — 第1鶏舎',
+  alerts:    'アラート一覧',
+};
+
+// 今日の日付
+document.getElementById('topbar-date').textContent =
+  new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+
+// ── 画面切替 ──────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.getElementById('page-title').textContent = titles[id] || id;
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'"))
+      n.classList.add('active');
+  });
+  // 遅延初期化
+  if (id === 'camera')   initCamera();
+  if (id === 'weight')   initWeightCharts();
+  if (id === 'growth')   initGrowthChart();
+  if (id === 'health')   initHealthChart();
+}
+
+// ── トースト ──────────────────────────────────────────────────────────────────
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--success)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── アラートクリア ────────────────────────────────────────────────────────────
+function clearAlerts() {
+  document.querySelectorAll('#alert-list-full .alert-unread').forEach(d => d.remove());
+  document.querySelector('.alert-bell .dot').style.display = 'none';
+  document.querySelector('.nav-badge').style.display = 'none';
+  showToast('✅ 全てのアラートを既読にしました');
+}
+
+// ── 出荷詳細 ─────────────────────────────────────────────────────────────────
+function showShipDetail(lot) {
+  showToast(`📋 ${lot} の詳細を読み込み中...`, 'var(--secondary)');
+  setTimeout(() => showScreen('growth'), 600);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// カメラ — YOLOv4シミュレーション
+// ══════════════════════════════════════════════════════════════════════════════
+let cameraInited = false;
+let animFrameId = null;
+
+function initCamera() {
+  if (cameraInited) return;
+  cameraInited = true;
+
+  const video   = document.getElementById('cam-video');
+  const canvas  = document.getElementById('cam-canvas');
+  const wrap    = document.getElementById('camera-wrap');
+  const ctx     = canvas.getContext('2d');
+  const countEl = document.getElementById('count-badge');
+  const metricCount  = document.getElementById('metric-count');
+  const metricWeight = document.getElementById('metric-weight');
+  const confVal  = document.getElementById('confidence-val');
+  const confBar  = document.getElementById('confidence-bar');
+
+  // 疑似個体データ生成
+  let chickens = [];
+  function seedChickens(w, h) {
+    chickens = [];
+    const n = 18 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < n; i++) {
+      const bw = 40 + Math.random() * 36;
+      const bh = bw * (0.8 + Math.random() * 0.4);
+      chickens.push({
+        x: bw/2 + Math.random() * (w - bw),
+        y: bh/2 + Math.random() * (h - bh),
+        w: bw, h: bh,
+        vx: (Math.random()-0.5)*0.8,
+        vy: (Math.random()-0.5)*0.6,
+        conf: 0.78 + Math.random()*0.20,
+        weight: (2.6 + Math.random()*0.7).toFixed(2),
+        phase: Math.random()*Math.PI*2,
+      });
+    }
+  }
+
+  function resizeCanvas() {
+    canvas.width  = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    const vw = wrap.clientWidth, vh = wrap.clientHeight;
+    if (chickens.length === 0) seedChickens(vw, vh);
+  }
+
+  resizeCanvas();
+  new ResizeObserver(resizeCanvas).observe(wrap);
+
+  let tick = 0;
+  function draw() {
+    animFrameId = requestAnimationFrame(draw);
+    tick++;
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    let totalConf = 0, visCount = 0;
+    chickens.forEach((c, i) => {
+      // ゆらぎ移動
+      c.phase += 0.03;
+      c.x += c.vx + Math.sin(c.phase + i)*0.3;
+      c.y += c.vy + Math.cos(c.phase + i*1.3)*0.25;
+      // 壁バウンス
+      if (c.x < c.w/2 || c.x > W - c.w/2) c.vx *= -1;
+      if (c.y < c.h/2 || c.y > H - c.h/2) c.vy *= -1;
+      c.x = Math.max(c.w/2, Math.min(W - c.w/2, c.x));
+      c.y = Math.max(c.h/2, Math.min(H - c.h/2, c.y));
+
+      // フリッカーで非表示を演出（認識ミス）
+      if (Math.random() < 0.004) return;
+      visCount++;
+      totalConf += c.conf;
+
+      const x1 = c.x - c.w/2, y1 = c.y - c.h/2;
+      const confColor = c.conf > 0.9 ? '#00FF88' : c.conf > 0.8 ? '#FFE000' : '#FF6644';
+
+      // バウンディングボックス
+      ctx.strokeStyle = confColor;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x1, y1, c.w, c.h);
+
+      // ラベル背景
+      const label = `${(c.conf*100).toFixed(0)}% ${c.weight}kg`;
+      ctx.font = '9px Arial';
+      const lw = ctx.measureText(label).width + 6;
+      ctx.fillStyle = confColor;
+      ctx.fillRect(x1, y1 - 14, lw, 14);
+      ctx.fillStyle = '#000';
+      ctx.fillText(label, x1 + 3, y1 - 3);
+    });
+
+    // 情報更新（30フレームごと）
+    if (tick % 30 === 0) {
+      const avgConf = visCount ? (totalConf / visCount * 100).toFixed(1) : 0;
+      countEl.textContent = `認識中: ${visCount}羽`;
+      metricCount.textContent = visCount;
+      confVal.textContent = avgConf + '%';
+      confBar.style.width = avgConf + '%';
+    }
+  }
+
+  video.addEventListener('loadedmetadata', () => {
+    seedChickens(canvas.width || 480, canvas.height || 360);
+    draw();
+  });
+  if (video.readyState >= 1) {
+    seedChickens(canvas.width || 480, canvas.height || 360);
+    draw();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 体重推定グラフ
+// ══════════════════════════════════════════════════════════════════════════════
+let weightInited = false;
+function initWeightCharts() {
+  if (weightInited) return;
+  weightInited = true;
+
+  // ヒストグラム
+  const hc = document.getElementById('histogram-canvas');
+  hc.width = hc.parentElement.clientWidth - 32;
+  const hctx = hc.getContext('2d');
+  const W = hc.width, H = hc.height;
+  const bins = [
+    { label:'2.0〜2.2', count:180 }, { label:'2.2〜2.4', count:820 },
+    { label:'2.4〜2.6', count:2100 },{ label:'2.6〜2.8', count:3400 },
+    { label:'2.8〜3.0', count:3200 },{ label:'3.0〜3.2', count:1900 },
+    { label:'3.2〜3.4', count:560 }, { label:'3.4〜3.6', count:240 },
+  ];
+  const max = Math.max(...bins.map(b=>b.count));
+  const pad = { l:40, r:20, t:10, b:36 };
+  const bw  = (W - pad.l - pad.r) / bins.length;
+
+  // 背景
+  hctx.fillStyle = '#F9FBFF';
+  hctx.fillRect(0,0,W,H);
+
+  // 3kg線（出荷基準）
+  const shipX = pad.l + bw * 5;
+  hctx.strokeStyle = '#2E7D52';
+  hctx.lineWidth = 2;
+  hctx.setLineDash([5,3]);
+  hctx.beginPath(); hctx.moveTo(shipX, pad.t); hctx.lineTo(shipX, H-pad.b); hctx.stroke();
+  hctx.setLineDash([]);
+  hctx.fillStyle = '#2E7D52'; hctx.font = '10px Arial';
+  hctx.fillText('出荷基準', shipX+4, pad.t+12);
+
+  bins.forEach((b, i) => {
+    const bh = (b.count / max) * (H - pad.t - pad.b);
+    const bx = pad.l + i * bw + 3;
+    const by = H - pad.b - bh;
+    hctx.fillStyle = i >= 5 ? '#2E7D52' : '#2E75B6';
+    hctx.globalAlpha = 0.8;
+    hctx.fillRect(bx, by, bw-6, bh);
+    hctx.globalAlpha = 1;
+    // label
+    hctx.fillStyle = '#666'; hctx.font = '9px Arial';
+    const lbl = b.label.split('〜')[0];
+    hctx.fillText(lbl, bx, H-pad.b+12);
+    // count
+    hctx.fillStyle = '#333'; hctx.font = '9px Arial';
+    hctx.fillText(b.count.toLocaleString(), bx, by-3);
+  });
+
+  // 軸
+  hctx.strokeStyle = '#ccc'; hctx.lineWidth = 1;
+  hctx.beginPath(); hctx.moveTo(pad.l,pad.t); hctx.lineTo(pad.l,H-pad.b); hctx.lineTo(W-pad.r,H-pad.b); hctx.stroke();
+
+  // 散布図
+  const sc = document.getElementById('scatter-canvas');
+  sc.width = sc.parentElement.clientWidth - 32;
+  const sctx = sc.getContext('2d');
+  const SW = sc.width, SH = sc.height;
+  sctx.fillStyle = '#F9FBFF'; sctx.fillRect(0,0,SW,SH);
+
+  const sp = {l:40,r:20,t:10,b:36};
+  const minV=2.0, maxV=3.6;
+
+  function toX(v){ return sp.l + (v-minV)/(maxV-minV)*(SW-sp.l-sp.r); }
+  function toY(v){ return SH-sp.b - (v-minV)/(maxV-minV)*(SH-sp.t-sp.b); }
+
+  // 理想線
+  sctx.strokeStyle = '#999'; sctx.lineWidth = 1.5; sctx.setLineDash([6,4]);
+  sctx.beginPath(); sctx.moveTo(toX(minV),toY(minV)); sctx.lineTo(toX(maxV),toY(maxV)); sctx.stroke();
+  sctx.setLineDash([]);
+
+  // データ点
+  const samples = Array.from({length:48},()=>{
+    const real = 2.1 + Math.random()*1.4;
+    const est  = real + (Math.random()-0.5)*0.18;
+    return [real, Math.max(2.0, Math.min(3.6, est))];
+  });
+  samples.forEach(([r,e]) => {
+    sctx.beginPath();
+    sctx.arc(toX(r), toY(e), 4, 0, Math.PI*2);
+    sctx.fillStyle = 'rgba(46,117,182,0.65)';
+    sctx.fill();
+  });
+
+  // 軸
+  sctx.strokeStyle='#ccc'; sctx.lineWidth=1;
+  sctx.beginPath(); sctx.moveTo(sp.l,sp.t); sctx.lineTo(sp.l,SH-sp.b); sctx.lineTo(SW-sp.r,SH-sp.b); sctx.stroke();
+  sctx.fillStyle='#666'; sctx.font='10px Arial';
+  sctx.fillText('実測値 (kg)', SW/2-20, SH-4);
+  [2.0,2.4,2.8,3.2,3.6].forEach(v => {
+    sctx.fillText(v.toFixed(1), toX(v)-8, SH-sp.b+12);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 成長曲線
+// ══════════════════════════════════════════════════════════════════════════════
+let growthInited = false;
+function initGrowthChart() {
+  if (growthInited) return;
+  growthInited = true;
+
+  const data = [
+    {d:1,w:0.04,s:0.04},{d:5,w:0.11,s:0.12},{d:10,w:0.28,s:0.30},
+    {d:15,w:0.52,s:0.55},{d:20,w:0.86,s:0.90},{d:25,w:1.22,s:1.28},
+    {d:28,w:1.48,s:1.55},{d:30,w:1.66,s:1.74},{d:35,w:2.10,s:2.18},
+    {d:38,w:2.38,s:2.46},{d:40,w:2.55,s:2.62},{d:43,w:2.93,s:2.85},
+  ];
+  const predict = [{d:43,w:2.93},{d:45,w:3.02},{d:47,w:3.10},{d:50,w:3.18}];
+
+  const gc = document.getElementById('growth-canvas');
+  gc.width = gc.parentElement.clientWidth - 32;
+  const ctx = gc.getContext('2d');
+  const W = gc.width, H = gc.height;
+  const pad = {l:44,r:20,t:16,b:36};
+
+  ctx.fillStyle = '#F9FBFF'; ctx.fillRect(0,0,W,H);
+
+  const minD=0,maxD=50,minW=0,maxW=3.5;
+  function px(d){ return pad.l + (d-minD)/(maxD-minD)*(W-pad.l-pad.r); }
+  function py(w){ return H-pad.b - (w-minW)/(maxW-minW)*(H-pad.t-pad.b); }
+
+  // 出荷基準線
+  ctx.strokeStyle='rgba(46,125,82,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(pad.l,py(3.0)); ctx.lineTo(W-pad.r,py(3.0)); ctx.stroke();
+  ctx.fillStyle='var(--success)'; ctx.font='10px Arial';
+  ctx.fillText('出荷基準 3.0kg', W-pad.r-90, py(3.0)-4);
+  ctx.setLineDash([]);
+
+  // 標準値（グレー破線）
+  ctx.strokeStyle='#BBB'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  data.forEach((p,i) => i===0 ? ctx.moveTo(px(p.d),py(p.s)) : ctx.lineTo(px(p.d),py(p.s)));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 推定体重（青実線）
+  ctx.strokeStyle='#2E75B6'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  data.forEach((p,i) => i===0 ? ctx.moveTo(px(p.d),py(p.w)) : ctx.lineTo(px(p.d),py(p.w)));
+  ctx.stroke();
+
+  // 予測（点線）
+  ctx.strokeStyle='#AAC4E0'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+  ctx.beginPath();
+  predict.forEach((p,i) => i===0 ? ctx.moveTo(px(p.d),py(p.w)) : ctx.lineTo(px(p.d),py(p.w)));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 現在日齢縦線
+  ctx.strokeStyle='rgba(31,78,121,0.4)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(px(43),pad.t); ctx.lineTo(px(43),H-pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#1F4E79'; ctx.font='bold 10px Arial';
+  ctx.fillText('43日目', px(43)+3, pad.t+12);
+
+  // データ点
+  data.forEach(p => {
+    ctx.beginPath(); ctx.arc(px(p.d),py(p.w),4,0,Math.PI*2);
+    ctx.fillStyle='#2E75B6'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+
+  // 軸
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+  ctx.fillStyle='#666'; ctx.font='10px Arial';
+  [0,10,20,30,40,50].forEach(d => ctx.fillText(d+'日', px(d)-8, H-pad.b+14));
+  [0,1.0,2.0,3.0].forEach(w => ctx.fillText(w.toFixed(1)+'kg', 2, py(w)+4));
+
+  // テーブル
+  const tbl = document.getElementById('growth-table');
+  tbl.innerHTML = '<tr><th>日齢</th><th>推定体重</th><th>標準体重</th><th>差異</th><th>状況</th></tr>';
+  data.slice().reverse().forEach(p => {
+    const diff = p.w - p.s;
+    const sign = diff >= 0 ? '+' : '';
+    const diffColor = Math.abs(diff) < 0.1 ? 'var(--success)' : Math.abs(diff) < 0.2 ? 'var(--warning)' : 'var(--danger)';
+    const status = Math.abs(diff) < 0.1 ? '<span class="badge green">正常</span>' : diff > 0 ? '<span class="badge blue">順調</span>' : '<span class="badge orange">注意</span>';
+    tbl.innerHTML += `<tr>
+      <td>${p.d}日</td>
+      <td><strong>${p.w.toFixed(2)} kg</strong></td>
+      <td>${p.s.toFixed(2)} kg</td>
+      <td style="color:${diffColor}"><strong>${sign}${(diff*1000).toFixed(0)}g</strong></td>
+      <td>${status}</td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 健康モニター グラフ
+// ══════════════════════════════════════════════════════════════════════════════
+let healthInited = false;
+function initHealthChart() {
+  if (healthInited) return;
+  healthInited = true;
+
+  const hc = document.getElementById('health-canvas');
+  hc.width = hc.parentElement.clientWidth - 32;
+  const ctx = hc.getContext('2d');
+  const W = hc.width, H = hc.height;
+  const pad = {l:40,r:20,t:16,b:30};
+
+  const hours = Array.from({length:24},(_,i)=>i);
+  const vals  = hours.map(h => {
+    const base = h < 6 || h > 21 ? 25 + Math.random()*15 : 60 + Math.random()*30;
+    return Math.round(base);
+  });
+
+  ctx.fillStyle='#F9FBFF'; ctx.fillRect(0,0,W,H);
+
+  const minV=0,maxV=100;
+  function px(i){ return pad.l + (i/23)*(W-pad.l-pad.r); }
+  function py(v){ return H-pad.b - (v-minV)/(maxV-minV)*(H-pad.t-pad.b); }
+
+  // 正常範囲帯
+  ctx.fillStyle='rgba(200,220,200,0.25)';
+  ctx.fillRect(pad.l, py(85), W-pad.l-pad.r, py(40)-py(85));
+
+  // 折れ線（グラデ塗り）
+  ctx.beginPath();
+  vals.forEach((v,i) => i===0 ? ctx.moveTo(px(i),py(v)) : ctx.lineTo(px(i),py(v)));
+  ctx.lineTo(px(23),H-pad.b); ctx.lineTo(px(0),H-pad.b); ctx.closePath();
+  const grad = ctx.createLinearGradient(0,pad.t,0,H-pad.b);
+  grad.addColorStop(0,'rgba(46,117,182,0.3)');
+  grad.addColorStop(1,'rgba(46,117,182,0.02)');
+  ctx.fillStyle=grad; ctx.fill();
+
+  ctx.strokeStyle='#2E75B6'; ctx.lineWidth=2;
+  ctx.beginPath();
+  vals.forEach((v,i) => i===0 ? ctx.moveTo(px(i),py(v)) : ctx.lineTo(px(i),py(v)));
+  ctx.stroke();
+
+  // 軸
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+  ctx.fillStyle='#666'; ctx.font='10px Arial';
+  [0,6,12,18,23].forEach(h => ctx.fillText(h+'時', px(h)-8, H-pad.b+14));
+  [0,50,100].forEach(v => ctx.fillText(v, 4, py(v)+4));
+}
+
+// ── 初期化 ────────────────────────────────────────────────────────────────────
+// ダッシュボードは最初から表示されているが、他の画面はlazyに初期化
+</script>
+</body>
+</html>
